@@ -73,7 +73,7 @@ defmodule AshStorage.Changes.Detach do
     attachment_resource
     |> Ash.Query.filter(^filter)
     |> Ash.Query.load(:blob)
-    |> Ash.read(Keyword.take(context_opts, [:actor, :tenant, :authorize?, :tracer]))
+    |> Ash.read(Keyword.take(context_opts, [:actor, :tenant, :authorize?, :tracer, :context]))
   end
 
   defp destroy_attachment_records(attachments, context_opts) do
