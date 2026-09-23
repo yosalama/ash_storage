@@ -81,7 +81,9 @@ defmodule AshStorage.Changes.HandleDependentAttachments do
           case attachment_resource
                |> Ash.Query.filter(^filter)
                |> Ash.Query.load(:blob)
-               |> Ash.read(Keyword.take(context_opts, [:actor, :tenant, :authorize?, :tracer])) do
+               |> Ash.read(
+                 Keyword.take(context_opts, [:actor, :tenant, :authorize?, :tracer, :context])
+               ) do
             {:ok, attachments} -> Map.put(acc, attachment_def.name, attachments)
             _ -> acc
           end
