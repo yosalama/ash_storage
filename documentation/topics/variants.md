@@ -131,6 +131,9 @@ defmodule MyApp.StorageBlob do
   end
 
   oban do
+    # Share AshOban's marker with actions started by this action.
+    shared_context [:ash_oban?]
+
     triggers do
       trigger :run_pending_variants do
         action :run_pending_variants
@@ -153,6 +156,18 @@ end
 When a file is attached with oban variants, the pending variant definitions are stored in `blob.metadata["__pending_variants__"]`. The Oban trigger picks up blobs with pending variants, downloads the source, runs each transformation, uploads the results, and updates the status to `"complete"`.
 
 If you use `generate: :oban` without this trigger configured, a compile-time verifier will raise an error.
+
+Add `shared_context [:ash_oban?]` when nested blob policies use
+`AshOban.Checks.AshObanInteraction`. AshStorage passes this context to the nested actions. Your
+application still defines its own policies. For example:
+
+```elixir
+policies do
+  bypass AshOban.Checks.AshObanInteraction do
+    authorize_if always()
+  end
+end
+```
 
 ## Mixing generation modes
 

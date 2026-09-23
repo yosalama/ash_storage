@@ -9,7 +9,9 @@ defmodule AshStorage.BlobResource.Changes.RunPendingVariants do
   use Ash.Resource.Change
 
   @impl true
-  def change(changeset, _opts, _context) do
+  def change(changeset, _opts, context) do
+    context_opts = [scope: context]
+
     Ash.Changeset.after_action(changeset, fn _changeset, blob ->
       pending_variants = blob.metadata["__pending_variants__"] || %{}
 
@@ -38,7 +40,8 @@ defmodule AshStorage.BlobResource.Changes.RunPendingVariants do
                  blob,
                  variant_def,
                  resource_module,
-                 attachment_def
+                 attachment_def,
+                 context_opts
                ) do
             {:ok, _variant_blob} -> "complete"
             {:error, :not_accepted} -> "skipped"
@@ -65,7 +68,11 @@ defmodule AshStorage.BlobResource.Changes.RunPendingVariants do
                 %{metadata: metadata, pending_variants: false}
               end
 
-            case Ash.update(blob, update_params, action: :update_metadata) do
+            case Ash.update(
+                   blob,
+                   update_params,
+                   Keyword.merge(context_opts, action: :update_metadata)
+                 ) do
               {:ok, blob} -> {:cont, {:ok, blob}}
               {:error, error} -> {:halt, {:error, error}}
             end

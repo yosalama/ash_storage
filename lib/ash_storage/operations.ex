@@ -291,7 +291,7 @@ defmodule AshStorage.Operations do
         context_opts =
           opts
           |> Keyword.put(:tenant, tenant)
-          |> Keyword.take([:actor, :tenant, :authorize?, :tracer])
+          |> Keyword.take([:actor, :tenant, :authorize?, :tracer, :context, :scope])
 
         analyzer_opts = analyzer_entry["opts"] || %{}
         content_type = blob.content_type || "application/octet-stream"
@@ -433,7 +433,7 @@ defmodule AshStorage.Operations do
       context_opts =
         context_opts
         |> Keyword.put(:tenant, tenant)
-        |> Keyword.take([:actor, :tenant, :authorize?, :tracer])
+        |> Keyword.take([:actor, :tenant, :authorize?, :tracer, :context, :scope])
 
       attrs =
         Enum.reduce(write_attributes, %{}, fn {result_key, attr_name}, acc ->
