@@ -107,6 +107,9 @@ defmodule MyApp.StorageBlob do
   end
 
   oban do
+    # Share AshOban's marker with actions started by this action.
+    shared_context [:ash_oban?]
+
     triggers do
       trigger :run_pending_analyzers do
         action :run_pending_analyzers
@@ -127,6 +130,10 @@ end
 The `where` clause ensures only blobs with pending analyzers are picked up. When the trigger fires, the `:run_pending_analyzers` action downloads the file from storage and runs each pending analyzer.
 
 If you use `analyze: :oban` without this trigger configured, a compile-time verifier will raise an error telling you what to add.
+
+Add `shared_context [:ash_oban?]` when nested blob or parent policies use
+`AshOban.Checks.AshObanInteraction`. AshStorage passes this context to the nested actions. Your
+application still defines its own policies.
 
 ## Mixing eager and oban analyzers
 
