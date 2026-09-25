@@ -39,10 +39,9 @@ if Code.ensure_loaded?(ReqS3) do
     - `:public_base_url` - base URL for file URLs, such as a CDN or custom
       domain. The bucket name is not added. Not used for presigned URLs
     - `:prefix` - optional key prefix (e.g. `"uploads/"`)
-    - `:direct_upload_expires_in` - direct-upload URL lifetime in seconds
-      (default: `86400`)
-    - `:direct_upload_create_only` - require direct PUT uploads to create a new
-      object instead of replacing one at the same key (default: `false`)
+    - `:direct_upload_expires_in` - URL lifetime in seconds (default: `86400`)
+    - `:direct_upload_create_only` - sign PUTs with `If-None-Match: *`
+      (default: `false`)
     - `:decode_body` - opt back into Req's content-type response decoding on
       `download/2`. Defaults to `false`; see the `AshStorage.Service`
       `download/2` callback docs for the raw-bytes contract.

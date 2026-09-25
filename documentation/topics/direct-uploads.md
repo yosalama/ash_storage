@@ -121,8 +121,7 @@ service {AshStorage.Service.S3,
 
 The JS example below is for presigned PUT. For presigned POST, build a `FormData` with the returned `:fields` (each as a form field), append the file last, and `POST` it as `multipart/form-data` — do not set `Content-Type` manually or send the raw file as the body.
 
-S3 PUT URLs expire after 24 hours by default. You can shorten their lifetime
-and prevent them from replacing an object that already exists at the same key:
+For short-lived, create-only S3 or Cloudflare R2 PUT URLs:
 
 ```elixir
 service {AshStorage.Service.S3,
@@ -131,10 +130,7 @@ service {AshStorage.Service.S3,
   direct_upload_create_only: true}
 ```
 
-When `:direct_upload_create_only` is enabled, the returned `:headers` include
-`If-None-Match: *`. The client must send that header with the upload. This is
-supported by Amazon S3 and compatible services that implement conditional
-writes, including Cloudflare R2.
+The client must send the returned `If-None-Match` header.
 
 ## Step 2: Client uploads and attaches
 
