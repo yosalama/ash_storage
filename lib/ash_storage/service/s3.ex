@@ -37,6 +37,9 @@ if Code.ensure_loaded?(ReqS3) do
       access key from (default: `"AWS_SECRET_ACCESS_KEY"`)
     - `:endpoint_url` - custom endpoint URL for S3-compatible services (e.g. MinIO, Tigris)
     - `:prefix` - optional key prefix (e.g. `"uploads/"`)
+    - `:direct_upload_expires_in` - URL lifetime in seconds (default: `86400`)
+    - `:direct_upload_create_only` - sign PUTs with `If-None-Match: *`
+      (default: `false`)
     - `:decode_body` - opt back into Req's content-type response decoding on
       `download/2`. Defaults to `false`; see the `AshStorage.Service`
       `download/2` callback docs for the raw-bytes contract.
@@ -91,6 +94,8 @@ if Code.ensure_loaded?(ReqS3) do
         secret_access_key_env: [type: :string],
         endpoint_url: [type: :string],
         prefix: [type: :string],
+        direct_upload_expires_in: [type: :integer],
+        direct_upload_create_only: [type: :boolean],
         decode_body: [type: :boolean]
       ]
     end
@@ -225,13 +230,8 @@ if Code.ensure_loaded?(ReqS3) do
     By default, generates a presigned PUT URL (`:method` option defaults to `:put`).
     Set `method: :post` in service_opts to use presigned POST forms instead.
 
-    For `:put`, returns `%{url: presigned_url, method: :put}`.
+    For `:put`, returns `%{url: presigned_url, method: :put, headers: headers}`.
     For `:post`, returns `%{url: form_url, method: :post, fields: [...]}`.
-
-    Note: this currently returns no `:headers`. If you add request headers that
-    SigV4 signs (any `x-amz-*` header, e.g. SSE or `x-amz-meta-*`), they must be
-    included at presign time — clients sending them post-hoc will get a signature
-    mismatch.
     """
     @impl true
     def direct_upload(key, %AshStorage.Service.Context{} = ctx) do
@@ -252,14 +252,27 @@ if Code.ensure_loaded?(ReqS3) do
 
         case method do
           :put ->
-            url = ReqS3.presign_url(Keyword.put(presign_base, :method, :put))
-            {:ok, %{url: url, method: :put}}
+            headers = direct_upload_headers(opts)
+
+            url =
+              presign_base
+              |> Keyword.put(:method, :put)
+              |> Keyword.put(:headers, Map.to_list(headers))
+              |> maybe_put(:expires, Keyword.get(opts, :direct_upload_expires_in))
+              |> ReqS3.presign_url()
+
+            {:ok, %{url: url, method: :put, headers: headers}}
 
           :post ->
             presign_opts =
               presign_base
               |> maybe_put(:content_type, Keyword.get(opts, :content_type))
               |> maybe_put(:max_size, Keyword.get(opts, :max_size))
+              |> maybe_put(
+                :expires_in,
+                Keyword.get(opts, :direct_upload_expires_in) &&
+                  :timer.seconds(Keyword.fetch!(opts, :direct_upload_expires_in))
+              )
 
             form = ReqS3.presign_form(presign_opts)
             {:ok, %{url: form.url, method: :post, fields: form.fields}}
@@ -268,6 +281,14 @@ if Code.ensure_loaded?(ReqS3) do
     end
 
     # -- Private helpers --
+
+    defp direct_upload_headers(opts) do
+      if Keyword.get(opts, :direct_upload_create_only, false) do
+        %{"if-none-match" => "*"}
+      else
+        %{}
+      end
+    end
 
     defp req(%AshStorage.Service.Context{} = ctx) do
       opts = ctx.service_opts

@@ -155,6 +155,28 @@ defmodule AshStorage.Service.S3Test do
     end
   end
 
+  describe "direct_upload/2" do
+    test "supports a shorter create-only PUT" do
+      ctx =
+        Context.new(
+          bucket: "test-bucket",
+          region: "us-east-1",
+          access_key_id: "AKIATEST",
+          secret_access_key: "secret",
+          direct_upload_expires_in: 300,
+          direct_upload_create_only: true
+        )
+
+      assert {:ok, %{url: url, method: :put, headers: %{"if-none-match" => "*"}}} =
+               S3.direct_upload("resume.pdf", ctx)
+
+      query = url |> URI.parse() |> Map.fetch!(:query) |> URI.decode_query()
+
+      assert query["X-Amz-Expires"] == "300"
+      assert query["X-Amz-SignedHeaders"] == "host;if-none-match"
+    end
+  end
+
   describe "static credentials without environment variables (the documented recipe)" do
     test "an app-side service carries them to an operation that starts from the row" do
       Application.put_env(:ash_storage, :s3_test_static_credentials,
