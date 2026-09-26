@@ -402,13 +402,16 @@ defmodule AshStorage.Operations do
       Enum.reduce_while(attachments, {:ok, []}, fn att, {:ok, acc} ->
         blob = att.blob
 
-        with {:ok, _} <- Ash.destroy(att, action: :destroy, return_destroyed?: true),
+        with {:ok, _} <-
+               Ash.destroy(
+                 att,
+                 Keyword.merge(opts, action: :destroy, return_destroyed?: true)
+               ),
              {:ok, blob} <-
                Ash.update(
                  blob,
                  %{pending_purge: true},
-                 action: :mark_for_purge,
-                 return_record?: true
+                 Keyword.merge(opts, action: :mark_for_purge, return_record?: true)
                ) do
           {:cont, {:ok, [blob | acc]}}
         else

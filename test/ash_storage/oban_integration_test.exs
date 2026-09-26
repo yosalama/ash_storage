@@ -101,7 +101,7 @@ defmodule AshStorage.ObanIntegrationTest do
       assert marked_blob.pending_purge
     end
 
-    test "executing the purge_blob trigger cleans up marked blobs" do
+    test "the purge_blob worker cleans up marked blobs" do
       post = create_post!()
 
       {:ok, %{blob: blob}} =
@@ -113,8 +113,13 @@ defmodule AshStorage.ObanIntegrationTest do
       marked_blob = Ash.get!(PgBlob, blob.id)
       assert marked_blob.pending_purge
 
-      # Simulate what the AshOban trigger would do
-      Ash.destroy!(marked_blob, action: :purge_blob)
+      assert :ok =
+               perform_job(AshStorage.Test.PgBlob.PurgeBlobWorker, %{
+                 "primary_key" => %{"id" => marked_blob.id},
+                 "metadata" => %{},
+                 "action_arguments" => %{},
+                 "tenant" => nil
+               })
 
       # Now the file and blob should be gone
       refute AshStorage.Service.Test.exists?(blob.key)

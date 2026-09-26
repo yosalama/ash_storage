@@ -29,9 +29,4 @@ defmodule AshStorage.BlobResource.Changes.PurgeFile do
       end
     end)
   end
-
-  @impl true
-  def atomic(changeset, opts, context) do
-    {:ok, change(changeset, opts, context)}
-  end
 end
