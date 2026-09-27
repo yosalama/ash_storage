@@ -156,7 +156,7 @@ defmodule AshStorage.Service.S3Test do
   end
 
   describe "direct_upload/2" do
-    test "supports a shorter create-only PUT" do
+    test "supports a shorter PUT with signed headers" do
       ctx =
         Context.new(
           bucket: "test-bucket",
@@ -164,7 +164,7 @@ defmodule AshStorage.Service.S3Test do
           access_key_id: "AKIATEST",
           secret_access_key: "secret",
           direct_upload_expires_in: 300,
-          direct_upload_create_only: true
+          direct_upload_headers: %{"if-none-match" => "*"}
         )
 
       assert {:ok, %{url: url, method: :put, headers: %{"if-none-match" => "*"}}} =

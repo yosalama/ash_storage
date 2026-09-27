@@ -37,10 +37,9 @@ if Code.ensure_loaded?(ReqS3) do
       access key from (default: `"AWS_SECRET_ACCESS_KEY"`)
     - `:endpoint_url` - custom endpoint URL for S3-compatible services (e.g. MinIO, Tigris)
     - `:prefix` - optional key prefix (e.g. `"uploads/"`)
-    - `:direct_upload_expires_in` - direct-upload URL lifetime in seconds
-      (default: `86400`)
-    - `:direct_upload_create_only` - require direct PUT uploads to create a new
-      object instead of replacing one at the same key (default: `false`)
+    - `:direct_upload_expires_in` - URL lifetime in seconds (default: `86400`)
+    - `:direct_upload_headers` - headers to sign into direct PUT URLs and return
+      to the client (default: `%{}`)
     - `:decode_body` - opt back into Req's content-type response decoding on
       `download/2`. Defaults to `false`; see the `AshStorage.Service`
       `download/2` callback docs for the raw-bytes contract.
@@ -96,7 +95,7 @@ if Code.ensure_loaded?(ReqS3) do
         endpoint_url: [type: :string],
         prefix: [type: :string],
         direct_upload_expires_in: [type: :integer],
-        direct_upload_create_only: [type: :boolean],
+        direct_upload_headers: [type: :map],
         decode_body: [type: :boolean]
       ]
     end
@@ -253,7 +252,7 @@ if Code.ensure_loaded?(ReqS3) do
 
         case method do
           :put ->
-            headers = direct_upload_headers(opts)
+            headers = Keyword.get(opts, :direct_upload_headers, %{})
 
             url =
               presign_base
@@ -282,14 +281,6 @@ if Code.ensure_loaded?(ReqS3) do
     end
 
     # -- Private helpers --
-
-    defp direct_upload_headers(opts) do
-      if Keyword.get(opts, :direct_upload_create_only, false) do
-        %{"if-none-match" => "*"}
-      else
-        %{}
-      end
-    end
 
     defp req(%AshStorage.Service.Context{} = ctx) do
       opts = ctx.service_opts
