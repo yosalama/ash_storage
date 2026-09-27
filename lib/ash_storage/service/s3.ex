@@ -37,7 +37,8 @@ if Code.ensure_loaded?(ReqS3) do
       access key from (default: `"AWS_SECRET_ACCESS_KEY"`)
     - `:endpoint_url` - custom endpoint URL for S3-compatible services (e.g. MinIO, Tigris)
     - `:prefix` - optional key prefix (e.g. `"uploads/"`)
-    - `:direct_upload_expires_in` - URL lifetime in seconds (default: `86400`)
+    - `:direct_upload_expires_in` - direct PUT URL lifetime in seconds
+      (default: `86400`)
     - `:direct_upload_headers` - headers to sign into direct PUT URLs and return
       to the client (default: `%{}`)
     - `:decode_body` - opt back into Req's content-type response decoding on
@@ -268,11 +269,6 @@ if Code.ensure_loaded?(ReqS3) do
               presign_base
               |> maybe_put(:content_type, Keyword.get(opts, :content_type))
               |> maybe_put(:max_size, Keyword.get(opts, :max_size))
-              |> maybe_put(
-                :expires_in,
-                Keyword.get(opts, :direct_upload_expires_in) &&
-                  :timer.seconds(Keyword.fetch!(opts, :direct_upload_expires_in))
-              )
 
             form = ReqS3.presign_form(presign_opts)
             {:ok, %{url: form.url, method: :post, fields: form.fields}}
