@@ -127,7 +127,7 @@ For short-lived, create-only S3 or Cloudflare R2 PUT URLs:
 service {AshStorage.Service.S3,
   bucket: "my-app-uploads",
   direct_upload_expires_in: 300,
-  direct_upload_create_only: true}
+  direct_upload_headers: %{"if-none-match" => "*"}}
 ```
 
 The client must send the returned `If-None-Match` header.
